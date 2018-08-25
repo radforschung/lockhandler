@@ -1,0 +1,8 @@
+{
+  "env": {
+    "TTN_APP_ID": "@rf-lockhandler-ttn-app-id",
+    "TTN_ACCESS_KEY": "@rf-lockhandler-ttn-access-key",
+    "STATE_PATH": "/tmp/locks.json"
+  },
+  "alias": "rf-lockhandler"
+}

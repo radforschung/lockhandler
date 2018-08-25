@@ -1,0 +1,19 @@
+{
+  "name": "lockhandler",
+  "version": "0.0.1",
+  "description": "handles locks over ttn",
+  "main": "app.js",
+  "license": "Apache-2.0",
+  "private": true,
+  "dependencies": {
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "ttn": "^2.3.1"
+  },
+  "scripts": {
+    "start": "node app.js"
+  },
+  "devDependencies": {
+    "dotenv": "^6.0.0"
+  }
+}
