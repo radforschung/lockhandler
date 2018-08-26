@@ -2,6 +2,7 @@
   "env": {
     "TTN_APP_ID": "@rf-lockhandler-ttn-app-id",
     "TTN_ACCESS_KEY": "@rf-lockhandler-ttn-access-key",
+    "MLS_API_KEY": "@rf-lockhandler-mls-api-key",
     "STATE_PATH": "/tmp/locks.json"
   },
   "alias": "rf-lockhandler"

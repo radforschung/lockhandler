@@ -7,17 +7,26 @@ try {
 const ttn = require("ttn");
 const express = require("express");
 const fs = require("fs");
+const mls = require("mls");
 
 const PORT = process.env.PORT || 3000;
 const STATE_PATH = process.env.STATE_PATH || "locks.json";
 const TTN_APP_ID = process.env.TTN_APP_ID;
 const TTN_ACCESS_KEY = process.env.TTN_ACCESS_KEY;
+const MLS_API_KEY = process.env.MLS_API_KEY;
 
-if (typeof TTN_APP_ID === "undefined" || typeof TTN_ACCESS_KEY === "undefined") {
-	console.error("please set the env variables TTN_APP_ID and TTN_ACCESS_KEY");
+if (
+	typeof TTN_APP_ID === "undefined" ||
+	typeof TTN_ACCESS_KEY === "undefined" ||
+	typeof MLS_API_KEY === "undefined"
+) {
+	console.error(
+		"please set the env variables TTN_APP_ID, TTN_ACCESS_KEY and MLS_API_KEY"
+	);
 	process.exit(1);
 }
 
+const mozlocation = new mls(MLS_API_KEY);
 const app = express();
 app.set("view engine", "ejs");
 
@@ -43,6 +52,8 @@ process.on("exit", dumpLocks);
 process.on("SIGINT", process.exit);
 
 (async () => {
+	// https://www.thethingsnetwork.org/docs/applications/nodejs/api.html#dataclient
+	// TODO: research: check if connection aborts, reconnect? already supported by the lib?
 	client = await ttn.data(TTN_APP_ID, TTN_ACCESS_KEY);
 	console.log("connected to ttn");
 
@@ -62,12 +73,50 @@ process.on("SIGINT", process.exit);
 				id: device_id,
 				hardware_serial: payload.hardware_serial,
 				state: null,
-				last_seen: null
+				last_seen: null,
+				location: {}
 			};
 			locks.push(lock);
 		}
-		if (payload.payload_raw.length >= 2) {
-			lock.state = payload.payload_raw[1] === 0x01 ? "locked" : "open";
+		let data = payload.payload_raw;
+		if (data.length >= 2) {
+			if (data[0] == 0x01) {
+				lock.state = data[1] === 0x01 ? "locked" : "open";
+			}
+			if (data[0] == 0x02) {
+				lock.location = lock.location || {};
+				lock.location.wifi = [];
+				for (var i = 2; i <= data.length; i++) {
+					try {
+						let hex = i => (i < 0x10 ? "0" : "") + i.toString(16);
+						let bssid =
+							hex(data[i]) +
+							":" +
+							hex(data[++i]) +
+							":" +
+							hex(data[++i]) +
+							":" +
+							hex(data[++i]) +
+							":" +
+							hex(data[++i]) +
+							":" +
+							hex(data[++i]);
+						let rssi = data[++i] * -1;
+						lock.location.wifi.push({ bssid: bssid, rssi: rssi });
+					} catch (e) {}
+				}
+				if (lock.location.wifi.length > 0) {
+					let mlsdata = {
+						wifiAccessPoints: lock.location.wifi.map(wifi => ({
+							macAddress: wifi.bssid,
+							signalStrength: wifi.rssi
+						}))
+					};
+					mozlocation.geolocate(mlsdata, function(err, loc) {
+						lock.location.wifi_mls = loc;
+					});
+				}
+			}
 		}
 		lock.last_seen = payload.metadata.time;
 	});
