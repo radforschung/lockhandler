@@ -30,9 +30,9 @@
 			<% }) %>
 			</ul>
 		<% } %>
-		<% if (lock.location.wifi_mls) { %>
-			<% let mlsloc = lock.location.wifi_mls.location; %>
-			&mdash; MLS: <code><a href="https://www.openstreetmap.org/?mlat=<%= mlsloc.lat %>&mlon=<%= mlsloc.lng %>&zoom=17"><%= mlsloc.lat %>,<%= mlsloc.lng %></a></code> (<%= lock.location.wifi_mls.accuracy %> %)
+		<% if (lock.location.mls) { %>
+			<% let mlsloc = lock.location.mls.location; %>
+			&mdash; MLS: <code><a href="https://www.openstreetmap.org/?mlat=<%= mlsloc.lat %>&mlon=<%= mlsloc.lng %>&zoom=17"><%= mlsloc.lat %>,<%= mlsloc.lng %></a></code> (<%= lock.location.mls.accuracy %> %)
 		<% } %>
 		<% } %>
 	</li>

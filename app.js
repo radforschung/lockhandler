@@ -26,6 +26,8 @@ if (
 	process.exit(1);
 }
 
+const toHex = i => (i < 0x10 ? "0" : "") + i.toString(16);
+
 const mozlocation = new mls(MLS_API_KEY);
 const app = express();
 app.set("view engine", "ejs");
@@ -78,44 +80,46 @@ process.on("SIGINT", process.exit);
 			};
 			locks.push(lock);
 		}
+		let port = payload.port;
 		let data = payload.payload_raw;
-		if (data.length >= 2) {
-			if (data[0] == 0x01) {
-				lock.state = data[1] === 0x01 ? "locked" : "open";
+		if (port == 1 && data[0] == 0x01) {
+			lock.state = data[1] === 0x01 ? "locked" : "open";
+		}
+		if (port == 11 && data[0] == 0x02) {
+			lock.location = lock.location || {};
+			lock.location.wifi = [];
+			for (var i = 1; i <= data.length; i++) {
+				try {
+					let bssid =
+						toHex(data[i]) +
+						":" +
+						toHex(data[++i]) +
+						":" +
+						toHex(data[++i]) +
+						":" +
+						toHex(data[++i]) +
+						":" +
+						toHex(data[++i]) +
+						":" +
+						toHex(data[++i]);
+					let rssi = data[++i] * -1;
+					lock.location.wifi.push({ bssid: bssid, rssi: rssi });
+				} catch (e) {}
 			}
-			if (data[0] == 0x02) {
-				lock.location = lock.location || {};
-				lock.location.wifi = [];
-				for (var i = 2; i <= data.length; i++) {
-					try {
-						let hex = i => (i < 0x10 ? "0" : "") + i.toString(16);
-						let bssid =
-							hex(data[i]) +
-							":" +
-							hex(data[++i]) +
-							":" +
-							hex(data[++i]) +
-							":" +
-							hex(data[++i]) +
-							":" +
-							hex(data[++i]) +
-							":" +
-							hex(data[++i]);
-						let rssi = data[++i] * -1;
-						lock.location.wifi.push({ bssid: bssid, rssi: rssi });
-					} catch (e) {}
-				}
-				if (lock.location.wifi.length > 0) {
-					let mlsdata = {
-						wifiAccessPoints: lock.location.wifi.map(wifi => ({
-							macAddress: wifi.bssid,
-							signalStrength: wifi.rssi
-						}))
-					};
-					mozlocation.geolocate(mlsdata, function(err, loc) {
-						lock.location.wifi_mls = loc;
-					});
-				}
+			// remove old key
+			if (lock.location.wifi_mls) {
+				delete lock.location.wifi_mls;
+			}
+			if (lock.location.wifi.length > 0) {
+				let mlsdata = {
+					wifiAccessPoints: lock.location.wifi.map(wifi => ({
+						macAddress: wifi.bssid,
+						signalStrength: wifi.rssi
+					}))
+				};
+				mozlocation.geolocate(mlsdata, function(err, loc) {
+					lock.location.mls = loc;
+				});
 			}
 		}
 		lock.last_seen = payload.metadata.time;
