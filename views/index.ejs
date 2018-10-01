@@ -32,7 +32,11 @@
 		<% } %>
 		<% if (lock.location.mls) { %>
 			<% let mlsloc = lock.location.mls.location; %>
-			&mdash; MLS: <code><a href="https://www.openstreetmap.org/?mlat=<%= mlsloc.lat %>&mlon=<%= mlsloc.lng %>&zoom=17"><%= mlsloc.lat %>,<%= mlsloc.lng %></a></code> (<%= lock.location.mls.accuracy %> m)
+			&mdash; MLS: <code><a href="https://www.openstreetmap.org/?mlat=<%= mlsloc.lat %>&mlon=<%= mlsloc.lng %>&zoom=17"><%= mlsloc.lat %>,<%= mlsloc.lng %></a></code> (<%= lock.location.mls.accuracy %> m)<br/>
+		<% } %>
+		<% if (lock.location.gps) { %>
+			<% let gpsloc = lock.location.gps; %>
+			&mdash; GPS: <code><a href="https://www.openstreetmap.org/?mlat=<%= gpsloc.lat %>&mlon=<%= gpsloc.lng %>&zoom=17"><%= gpsloc.lat %>,<%= gpsloc.lng %></a></code> (<%= gpsloc.alt %> m Altitude, <%= gpsloc.hdop %> HDOP, <%= gpsloc.sat %> Satellites)<br/>
 		<% } %>
 		<% } %>
 	</li>

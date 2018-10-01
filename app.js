@@ -85,6 +85,31 @@ process.on("SIGINT", process.exit);
 		if (port == 1 && data[0] == 0x01) {
 			lock.state = data[1] === 0x01 ? "locked" : "open";
 		}
+		if (port == 10 && data[0] == 0x02) {
+			lock.location = lock.location || {};
+			lock.location.gps = {};
+
+			lock.location.gps.lat =
+				((data[1] << 16) >>> 0) + ((data[2] << 8) >>> 0) + data[3];
+			lock.location.gps.lat =
+				(lock.location.gps.lat / 16777215.0) * 180 - 90;
+
+			lock.location.gps.lng =
+				((data[4] << 16) >>> 0) + ((data[5] << 8) >>> 0) + data[6];
+			lock.location.gps.lng =
+				(lock.location.gps.lng / 16777215.0) * 360 - 180;
+
+			var altValue = ((data[7] << 8) >>> 0) + data[8];
+			var sign = data[7] & (1 << 7);
+			if (sign) {
+				lock.location.gps.alt = 0xffff0000 | altValue;
+			} else {
+				lock.location.gps.alt = altValue;
+			}
+
+			lock.location.gps.hdop = data[9] / 10.0;
+			lock.location.gps.sat = data[10];
+		}
 		if (port == 11 && data[0] == 0x02) {
 			lock.location = lock.location || {};
 			lock.location.wifi = [];
