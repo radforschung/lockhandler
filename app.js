@@ -109,6 +109,7 @@ process.on("SIGINT", process.exit);
 
 			lock.location.gps.hdop = data[9] / 10.0;
 			lock.location.gps.sat = data[10];
+			lock.location.gps.valid = (lock.location.gps.lat != -90 && lock.location.gps.lat != -180 && lock.location.gps.alt != 0);
 		}
 		if (port == 11 && data[0] == 0x02) {
 			lock.location = lock.location || {};

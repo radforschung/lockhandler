@@ -36,7 +36,11 @@
 		<% } %>
 		<% if (lock.location.gps) { %>
 			<% let gpsloc = lock.location.gps; %>
-			&mdash; GPS: <code><a href="https://www.openstreetmap.org/?mlat=<%= gpsloc.lat %>&mlon=<%= gpsloc.lng %>&zoom=17"><%= gpsloc.lat %>,<%= gpsloc.lng %></a></code> (<%= gpsloc.alt %> m Altitude, <%= gpsloc.hdop %> HDOP, <%= gpsloc.sat %> Satellites)<br/>
+			&mdash; GPS: 
+			<% if (gpsloc.valid) { %><code><a href="https://www.openstreetmap.org/?mlat=<%= gpsloc.lat %>&mlon=<%= gpsloc.lng %>&zoom=17"><%= gpsloc.lat %>,<%= gpsloc.lng %></a></code> (<%= gpsloc.alt %> m Altitude, <%= gpsloc.hdop %> HDOP, <%= gpsloc.sat %> Satellites)
+			<% }else{ %>
+				<em>invalid</em>
+			<% } %><br/>
 		<% } %>
 		<% } %>
 	</li>
@@ -48,5 +52,9 @@
 
 	<h2>debug</h2>
 	<a href="/dump">dump state</a> &middot; <a href="/state">view state</a>
+
+	<footer>
+	<p>lockhandler: <a href="https://github.com/radforschung/lockhandler">github</a></p>
+	</footer>
 </body>
 </html>
