@@ -86,6 +86,10 @@ process.on("SIGINT", process.exit);
 		// send downlink if we have some in our queue
 		if (typeof lockQueue[lock.id] !== "undefined" && lockQueue[lock.id].length > 0) {
 			lockQueue[lock.id] = lockQueue[lock.id].filter((item) => {
+				if (typeof item === "undefined" || typeof item.port === "undefined" || typeof item.data === "undefined") {
+					return false;
+				}
+
 				if (+(new Date()) > item.timeout) {
 					log.push({
 						time: new Date(),
