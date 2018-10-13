@@ -33,6 +33,7 @@ const app = express();
 app.set("view engine", "ejs");
 
 let locks;
+let lockQueue = [];
 let client;
 let log = [];
 
@@ -80,6 +81,38 @@ process.on("SIGINT", process.exit);
 			};
 			locks.push(lock);
 		}
+
+		// send downlink if we have some in our queue
+		if (typeof lockQueue[lock.id] !== "undefined" && lockQueue[lock.id].length > 0) {
+			lockQueue[lock.id] = lockQueue[lock.id].filter((item) => {
+				if (+(new Date()) > item.timeout) {
+					log.push({
+						time: new Date(),
+						device: lock.id,
+						type: "timeout",
+						created: item.created,
+						timeout: item.timeout,
+						payload: item.data,
+						port: item.port,
+						confirmed: item.confirmed
+					});
+				    return false; // remove item
+				}
+
+				client.send(lock.id, item.data, item.port, item.confirmed, "last");
+				log.push({
+					time: new Date(),
+					device: lock.id,
+					type: "sent",
+					created: item.created,
+					payload: item.data,
+					port: item.port,
+					confirmed: item.confirmed
+				});
+				return false; // remove item
+			});
+		}
+
 		let port = payload.port;
 		let data = payload.payload_raw;
 		if (port == 1 && data[0] == 0x01) {
@@ -172,17 +205,56 @@ app.post("/lock/:id/unlock", (req, res) => {
 		return;
 	}
 
+	if (typeof lockQueue[lock.id] === "undefined") {
+		lockQueue[lock.id] = [];
+	}
+
 	let data = Buffer.from([0x01, 0x01, 0x01]);
-	client.send(lock.id, data, 1, false, "last");
+	let timeout = +(new Date()) + 60 * 1000;
+
+	lockQueue[lock.id].push({
+		created: +(new Date()),
+		timeout: timeout,
+		data: data,
+		port: 1,
+		confirmed: false
+	})
+
 	log.push({
 		time: new Date(),
 		device: lock.id,
-		type: "sent",
+		type: "queued",
+		timeout: timeout,
 		payload: data
 	});
 
 	res.redirect("back");
 });
+
+setInterval(() => {
+	for (let lockId in lockQueue) {
+		if (lockQueue[lockId].length <= 0) {
+			continue;
+		}
+
+		lockQueue[lockId] = lockQueue[lockId].filter((item) => {
+			if (+(new Date()) > item.timeout) {
+				log.push({
+					time: new Date(),
+					device: lockId,
+					type: "timeout",
+					created: item.created,
+					timeout: item.timeout,
+					payload: item.data,
+					port: item.port,
+					confirmed: item.confirmed
+				});
+			    return false; // remove item
+			}
+			return true;
+		});
+	}
+}, 5000);
 
 const server = app.listen(PORT, () =>
 	console.log(`lockhandler running on ${JSON.stringify(server.address())}`)
