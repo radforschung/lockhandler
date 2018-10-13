@@ -14,6 +14,7 @@ const STATE_PATH = process.env.STATE_PATH || "locks.json";
 const TTN_APP_ID = process.env.TTN_APP_ID;
 const TTN_ACCESS_KEY = process.env.TTN_ACCESS_KEY;
 const MLS_API_KEY = process.env.MLS_API_KEY;
+const UNLOCK_TIMEOUT = 60;
 
 if (
 	typeof TTN_APP_ID === "undefined" ||
@@ -210,7 +211,7 @@ app.post("/lock/:id/unlock", (req, res) => {
 	}
 
 	let data = Buffer.from([0x01, 0x01, 0x01]);
-	let timeout = +(new Date()) + 60 * 1000;
+	let timeout = +(new Date()) + UNLOCK_TIMEOUT * 1000;
 
 	lockQueue[lock.id].push({
 		created: +(new Date()),
@@ -254,7 +255,7 @@ setInterval(() => {
 			return true;
 		});
 	}
-}, 5000);
+}, 5 * 1000);
 
 const server = app.listen(PORT, () =>
 	console.log(`lockhandler running on ${JSON.stringify(server.address())}`)
